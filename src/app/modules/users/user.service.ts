@@ -23,12 +23,19 @@ const updateUserInDB = async (id: string, updatedUserData: any) => {
 };
 
 const getAllUserFromDB = async () => {
-  const result = await User.find();
+  const result = await User.aggregate([
+    { $match: {} },
+    { $project: { password: 0 } },
+  ]);
   return result;
 };
 
-const getSingleUserFromDB = async (userId: string) => {
-  const result = await User.findOne({ userId });
+const getSingleUserFromDB = async (id: string) => {
+  const userId = Number(id);
+  const result = await User.aggregate([
+    { $match: { userId: userId } },
+    { $project: { password: 0 } },
+  ]);
 
   return result;
 };

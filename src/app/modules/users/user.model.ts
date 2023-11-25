@@ -6,7 +6,7 @@ import {
   TOrder,
   UserModel,
 } from './user.interface';
-import { config } from 'dotenv';
+import config from '../../config';
 import bcrypt from 'bcrypt';
 
 const fullNameSchema = new Schema<TFullName>({
@@ -63,9 +63,9 @@ const userSchema = new Schema<TUser, UserModel>({
 // pre middleware
 userSchema.pre('save', async function (next) {
   // eslint-disable-next-line @typescript-eslint/no-this-alias
-  const currentUser = this;
-  currentUser.password = await bcrypt.hash(
-    currentUser.password,
+  const user = this;
+  user.password = await bcrypt.hash(
+    user.password,
     Number(config.bcrypt_salt_rounds),
   );
 

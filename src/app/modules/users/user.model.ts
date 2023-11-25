@@ -1,11 +1,5 @@
 import { Schema, model } from 'mongoose';
-import {
-  TUser,
-  TAddress,
-  TFullName,
-  TOrder,
-  UserModel,
-} from './user.interface';
+import { TUser, TAddress, TFullName, UserModel } from './user.interface';
 import config from '../../config';
 import bcrypt from 'bcrypt';
 
@@ -22,12 +16,6 @@ const addressSchema = new Schema<TAddress>({
   street: { type: String, required: true, trim: true },
   city: { type: String, required: true, trim: true },
   country: { type: String, required: true, trim: true },
-});
-
-const orderSchema = new Schema<TOrder>({
-  productName: { type: String, required: true, trim: true },
-  price: { type: Number, required: true, trim: true },
-  quantity: { type: Number, required: true, trim: true },
 });
 
 const userSchema = new Schema<TUser, UserModel>({
@@ -53,7 +41,6 @@ const userSchema = new Schema<TUser, UserModel>({
   },
   hobbies: { type: [String], default: [], trim: true },
   address: { type: addressSchema, required: true, trim: true },
-  orders: { type: [orderSchema], trim: true },
   isDeleted: {
     type: Boolean,
     default: false,

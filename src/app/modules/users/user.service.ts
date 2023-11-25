@@ -13,10 +13,11 @@ const createUserIntoDB = async (userData: TUser) => {
 };
 
 const addOrder = async (id: string, orderData: TOrder) => {
-  const existUser = await User.findById(id);
+  const userId = Number(id);
+  const existUser = await User.findById(userId);
   if (existUser && orderData) {
     await User.findByIdAndUpdate(
-      id,
+      userId,
       {
         $push: { orders: orderData },
       },

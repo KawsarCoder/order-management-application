@@ -40,7 +40,7 @@ const addOrder = async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({
       success: false,
-      message: err.message || 'Something went wrong',
+      message: 'Something went wrong',
       error: err,
     });
   }
@@ -98,7 +98,7 @@ const getAllOrders = async (req: Request, res: Response) => {
   } catch (err: any) {
     res.status(500).json({
       success: false,
-      message: err.message || 'Somthing wrong',
+      message: 'Order not found',
       error: err,
     });
   }

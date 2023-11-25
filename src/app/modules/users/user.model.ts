@@ -1,7 +1,15 @@
 import { Schema, model } from 'mongoose';
-import { User, Address, FullName, Order } from './user.interface';
+import {
+  TUser,
+  TAddress,
+  TFullName,
+  TOrder,
+  UserModel,
+} from './user.interface';
+import { config } from 'dotenv';
+import bcrypt from 'bcrypt';
 
-const fullNameSchema = new Schema<FullName>({
+const fullNameSchema = new Schema<TFullName>({
   firstName: {
     type: String,
     required: true,
@@ -10,19 +18,19 @@ const fullNameSchema = new Schema<FullName>({
   lastName: { type: String, required: true, trim: true },
 });
 
-const addressSchema = new Schema<Address>({
+const addressSchema = new Schema<TAddress>({
   street: { type: String, required: true, trim: true },
   city: { type: String, required: true, trim: true },
   country: { type: String, required: true, trim: true },
 });
 
-const orderSchema = new Schema<Order>({
+const orderSchema = new Schema<TOrder>({
   productName: { type: String, required: true, trim: true },
   price: { type: Number, required: true, trim: true },
   quantity: { type: Number, required: true, trim: true },
 });
 
-const userSchema = new Schema<User>({
+const userSchema = new Schema<TUser, UserModel>({
   userId: {
     type: Number,
     required: [true, 'userId is required'],
@@ -46,6 +54,50 @@ const userSchema = new Schema<User>({
   hobbies: { type: [String], default: [], trim: true },
   address: { type: addressSchema, required: true, trim: true },
   orders: { type: [orderSchema], trim: true },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 });
 
-export const UserModel = model<User>('User', userSchema);
+// pre middleware
+userSchema.pre('save', async function (next) {
+  // eslint-disable-next-line @typescript-eslint/no-this-alias
+  const currentUser = this;
+  currentUser.password = await bcrypt.hash(
+    currentUser.password,
+    Number(config.bcrypt_salt_rounds),
+  );
+
+  next();
+});
+
+// post midllerware
+userSchema.post('save', function (doc, next) {
+  doc.password = '';
+  next();
+});
+
+// query middleware
+userSchema.pre('find', function (next) {
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
+
+userSchema.pre('findOne', function (next) {
+  this.find({ isDeleted: { $ne: true } });
+  next();
+});
+
+userSchema.pre('aggregate', function (next) {
+  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
+  next();
+});
+
+userSchema.statics.isUserExists = async function (userId: number) {
+  const existingUser = await User.findOne({ userId });
+
+  return existingUser;
+};
+
+export const User = model<TUser, UserModel>('User', userSchema);

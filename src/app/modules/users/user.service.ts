@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { TOrder, TUser } from './user.interface';
 import { User } from './user.model';
 
@@ -12,57 +13,44 @@ const createUserIntoDB = async (userData: TUser) => {
 };
 
 const addOrder = async (id: string, orderData: TOrder) => {
-  const userId = Number(id);
-
-  if (await User.isUserExists(userId)) {
-    const result = await User.updateMany(
-      { userId: userId },
+  const existUser = await User.findById(id);
+  if (existUser && orderData) {
+    await User.findByIdAndUpdate(
+      id,
       {
-        $push: {
-          orders: orderData,
-        },
+        $push: { orders: orderData },
       },
+      { new: true, runValidators: true },
     );
-    return result;
+
+    return orderData;
   }
-  throw new Error('User not found');
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const updateUserInDB = async (id: string, updatedUserData: any) => {
-  const userId = Number(id);
-
-  if (await User.isUserExists(userId)) {
-    const result = await User.updateOne({ userId: userId }, [
-      {
-        $set: updatedUserData,
-      },
-    ]);
+  const updatedData = await User.updateOne(
+    {
+      _id: new mongoose.Types.ObjectId(id),
+      isActive: true,
+    },
+    { $set: updatedUserData },
+  );
+  if (updatedData.modifiedCount === 1) {
+    const result = await User.find({
+      _id: new mongoose.Types.ObjectId(id),
+      isActive: true,
+    });
     return result;
+  } else if (
+    updatedData.modifiedCount === 0 &&
+    updatedData.matchedCount === 1
+  ) {
+    return Promise.reject('You try to update same data');
+  } else {
+    return Promise.reject('user Not Found');
   }
-  throw new Error('User not found');
 };
-
-// const createOrderInDb = async (id: string, orderCreateData: TOrder) => {
-//   const userId = Number(id);
-
-//   if (await User.isUserExists(userId)) {
-//     const result = await User.updateOne({ userId: userId }, [
-//       {
-//         $push: {
-//           orders: {
-//             $each: [orderCreateData],
-//             $position: 0, // Optional: Specify the position where you want to add the new order
-//           },
-//         },
-//       },
-//     ]);
-
-//     return result;
-//   }
-
-//   throw new Error('User not found');
-// };
 
 const getAllUserFromDB = async () => {
   const result = await User.aggregate([
@@ -73,9 +61,17 @@ const getAllUserFromDB = async () => {
 };
 
 const getAllOrdersFromDB = async (id: string) => {
-  const userId = Number(id);
-  const result = await User.findOne({ userId: userId });
-  return result;
+  const existUser = await User.findById(id);
+  if (existUser) {
+    const result = await User.findOne(
+      { _id: new mongoose.Types.ObjectId(id) },
+      { orders: -1 },
+    );
+
+    return result;
+  } else {
+    return Promise.reject('User Not Found');
+  }
 };
 
 const getSingleUserFromDB = async (id: string) => {
@@ -93,6 +89,28 @@ const deleteUserFromDB = async (userId: string) => {
   return result;
 };
 
+const totalPriceFromOrders = async (id: string) => {
+  const userId = Number(id);
+  const result = await User.aggregate([
+    {
+      $match: {
+        userId: userId,
+      },
+    },
+    {
+      $unwind: '$orders',
+    },
+    {
+      $group: {
+        _id: '$_id',
+        totalPrice: { $sum: '$orders.price' },
+      },
+    },
+  ]);
+
+  return result;
+};
+
 export const UserServices = {
   createUserIntoDB,
   getAllUserFromDB,
@@ -101,4 +119,6 @@ export const UserServices = {
   updateUserInDB,
   addOrder,
   getAllOrdersFromDB,
+  totalPriceFromOrders,
 };
+export default UserServices;

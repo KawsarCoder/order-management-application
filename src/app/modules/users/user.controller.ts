@@ -24,27 +24,18 @@ const createUsers = async (req: Request, res: Response) => {
   }
 };
 
-const createOrder = async (req: Request, res: Response) => {
+const addOrder = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const orderData = req.body;
 
-    const result = await UserServices.addOrder(userId, orderData);
+    await UserServices.addOrder(userId, orderData);
 
-    if (result.modifiedCount > 0) {
-      return res.status(200).json({
-        success: true,
-        message: 'Order Created successfully',
-        data: result,
-      });
-    } else {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found',
-        data: result,
-      });
-    }
-
+    res.status(200).json({
+      success: true,
+      message: 'Order created successfully',
+      data: null,
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     res.status(500).json({
@@ -97,22 +88,12 @@ const getAllOrders = async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
 
-    const user = await UserServices.getAllOrdersFromDB(userId);
-
-    if (user) {
-      const orders = user.orders;
-      res.status(200).json({
-        success: true,
-        message: 'Orders fetched successfully',
-        data: orders,
-      });
-    } else {
-      res.status(400).json({
-        success: false,
-        message: 'User not found',
-        data: [],
-      });
-    }
+    const result = await UserServices.getAllOrdersFromDB(userId);
+    res.status(200).json({
+      success: true,
+      message: 'Orders fetched successfully',
+      data: result,
+    });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
   } catch (err: any) {
     res.status(500).json({
@@ -163,12 +144,34 @@ const deleteUser = async (req: Request, res: Response) => {
   }
 };
 
+const totalPrice = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+  try {
+    const result = await UserServices.totalPriceFromOrders(userId);
+
+    res.status(200).json({
+      success: true,
+      message: 'Total Price Count successfully',
+      data: result,
+    });
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Somthing wrong',
+      error: err,
+    });
+  }
+};
+
 export const UserControllers = {
   createUsers,
   getAllUsers,
   getSingleUser,
   deleteUser,
   updateUser,
-  createOrder,
+  addOrder,
   getAllOrders,
+  totalPrice,
 };

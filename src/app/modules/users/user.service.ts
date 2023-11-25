@@ -11,6 +11,17 @@ const createUserIntoDB = async (userData: TUser) => {
   return result;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateUserInDB = async (id: string, updatedUserData: any) => {
+  const userId = Number(id);
+
+  if (await User.isUserExists(userId)) {
+    const result = await User.updateOne({ userId: userId, updatedUserData });
+    return result;
+  }
+  throw new Error('User not found');
+};
+
 const getAllUserFromDB = async () => {
   const result = await User.find();
   return result;
@@ -32,4 +43,5 @@ export const UserServices = {
   getAllUserFromDB,
   getSingleUserFromDB,
   deleteUserFromDB,
+  updateUserInDB,
 };

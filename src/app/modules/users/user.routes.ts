@@ -11,9 +11,9 @@ router.get('/:userId', UserControllers.getSingleUser);
 
 router.delete('/:userId', UserControllers.deleteUser);
 
-router.patch('/:userId', UserControllers.updateUser);
+router.put('/:userId', UserControllers.updateUser);
 
-router.post('/:userId/orders', UserControllers.addOrder);
+router.put('/:userId/orders', UserControllers.addOrder);
 
 router.get('/:userId/orders', UserControllers.getAllOrders);
 

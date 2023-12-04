@@ -3,49 +3,61 @@ import { TUser, TAddress, TFullName, UserModel } from './user.interface';
 import config from '../../config';
 import bcrypt from 'bcrypt';
 
-const fullNameSchema = new Schema<TFullName>({
-  firstName: {
-    type: String,
-    required: true,
-    trim: true,
-  },
-  lastName: { type: String, required: true, trim: true },
-});
-
-const addressSchema = new Schema<TAddress>({
-  street: { type: String, required: true, trim: true },
-  city: { type: String, required: true, trim: true },
-  country: { type: String, required: true, trim: true },
-});
-
-const userSchema = new Schema<TUser, UserModel>({
-  userId: {
-    type: Number,
-    required: [true, 'userId is required'],
-    unique: true,
-    trim: true,
-  },
-  username: { type: String, required: true, trim: true, unique: true },
-  password: { type: String, required: true, trim: true },
-  fullName: { type: fullNameSchema, required: true, trim: true },
-  age: { type: Number, required: true, trim: true },
-  email: { type: String, required: true, unique: true, trim: true },
-  isActive: {
-    type: String,
-    enum: {
-      values: ['active', 'blocked'],
-      message: '{VALUE} is not valid',
+const fullNameSchema = new Schema<TFullName>(
+  {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    default: 'active',
-    trim: true,
+    lastName: { type: String, required: true, trim: true },
   },
-  hobbies: { type: [String], default: [], trim: true },
-  address: { type: addressSchema, required: true, trim: true },
-  isDeleted: {
-    type: Boolean,
-    default: false,
+  {
+    _id: false,
   },
-});
+);
+
+const addressSchema = new Schema<TAddress>(
+  {
+    street: { type: String, required: true, trim: true },
+    city: { type: String, required: true, trim: true },
+    country: { type: String, required: true, trim: true },
+  },
+  {
+    _id: false,
+  },
+);
+
+const userSchema = new Schema<TUser, UserModel>(
+  {
+    userId: {
+      type: Number,
+      required: [true, 'userId is required'],
+      unique: true,
+      trim: true,
+    },
+    username: { type: String, required: true, trim: true, unique: true },
+    password: { type: String, required: true, trim: true },
+    fullName: { type: fullNameSchema, required: true, trim: true },
+    age: { type: Number, required: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true },
+    isActive: {
+      type: Boolean,
+      default: true,
+      trim: true,
+    },
+    hobbies: { type: [String], default: [], trim: true },
+    address: { type: addressSchema, required: true, trim: true },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    orders: { type: [] },
+  },
+  {
+    versionKey: false,
+  },
+);
 
 // pre middleware
 userSchema.pre('save', async function (next) {
@@ -62,6 +74,7 @@ userSchema.pre('save', async function (next) {
 // post midllerware
 userSchema.post('save', function (doc, next) {
   doc.password = '';
+  doc.orders = undefined;
   next();
 });
 

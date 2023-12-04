@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import { TOrder, TUser } from './user.interface';
 import { User } from './user.model';
 
@@ -14,10 +13,10 @@ const createUserIntoDB = async (userData: TUser) => {
 
 const addOrder = async (id: string, orderData: TOrder) => {
   const userId = Number(id);
-  const existUser = await User.findById(userId);
+  const existUser = await User.findOne({ userId: userId });
   if (existUser && orderData) {
-    await User.findByIdAndUpdate(
-      userId,
+    await User.updateOne(
+      { userId },
       {
         $push: { orders: orderData },
       },
@@ -29,18 +28,17 @@ const addOrder = async (id: string, orderData: TOrder) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const updateUserInDB = async (id: string, updatedUserData: any) => {
+const updateUserInDB = async (id: string, updatedUserData: object) => {
+  const userId = Number(id);
   const updatedData = await User.updateOne(
     {
-      _id: new mongoose.Types.ObjectId(id),
-      isActive: true,
+      userId: userId,
     },
     { $set: updatedUserData },
   );
   if (updatedData.modifiedCount === 1) {
-    const result = await User.find({
-      _id: new mongoose.Types.ObjectId(id),
-      isActive: true,
+    const result = await User.findOne({
+      userId: userId,
     });
     return result;
   } else if (
@@ -56,18 +54,19 @@ const updateUserInDB = async (id: string, updatedUserData: any) => {
 const getAllUserFromDB = async () => {
   const result = await User.aggregate([
     { $match: {} },
-    { $project: { password: 0 } },
+    { $project: { password: 0, orders: 0 } },
   ]);
   return result;
 };
 
 const getAllOrdersFromDB = async (id: string) => {
-  const existUser = await User.findById(id);
+  const userId = Number(id);
+  const existUser = await User.findOne({ userId });
   if (existUser) {
-    const result = await User.findOne(
-      { _id: new mongoose.Types.ObjectId(id) },
-      { orders: -1 },
-    );
+    const result = await User.aggregate([
+      { $match: { userId: userId } },
+      { $project: { orders: 1, _id: 0 } },
+    ]);
 
     return result;
   } else {
@@ -79,7 +78,7 @@ const getSingleUserFromDB = async (id: string) => {
   const userId = Number(id);
   const result = await User.aggregate([
     { $match: { userId: userId } },
-    { $project: { password: 0 } },
+    { $project: { password: 0, orders: 0, _id: 0 } },
   ]);
 
   return result;
@@ -102,10 +101,20 @@ const totalPriceFromOrders = async (id: string) => {
       $unwind: '$orders',
     },
     {
+      $addFields: {
+        sum: {
+          $multiply: ['$orders.price', '$orders.quantity'],
+        },
+      },
+    },
+    {
       $group: {
         _id: '$_id',
-        totalPrice: { $sum: '$orders.price' },
+        totalPrice: { $sum: '$sum' },
       },
+    },
+    {
+      $project: { _id: 0, totalPrice: 1 },
     },
   ]);
 

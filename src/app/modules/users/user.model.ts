@@ -28,7 +28,7 @@ const addressSchema = new Schema<TAddress>(
   },
 );
 
-const userSchema = new Schema<TUser, UserModel>(
+const userSchema = new Schema<TUser>(
   {
     userId: {
       type: Number,

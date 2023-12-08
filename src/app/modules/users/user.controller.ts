@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { UserServices } from './user.service';
 import userValidationSchema from './user.validator';
+
 const createUsers = async (req: Request, res: Response) => {
   try {
-    const { user: userData } = req.body;
+    const userData = req.body;
 
     const zodParseData = userValidationSchema.parse(userData);
 

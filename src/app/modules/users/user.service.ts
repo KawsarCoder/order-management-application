@@ -37,9 +37,12 @@ const updateUserInDB = async (id: string, updatedUserData: object) => {
     { $set: updatedUserData },
   );
   if (updatedData.modifiedCount === 1) {
-    const result = await User.findOne({
-      userId: userId,
-    });
+    const result = await User.findOne(
+      {
+        userId: userId,
+      },
+      { password: 0, orders: 0, isDeleted: 0, _id: 0 },
+    );
     return result;
   } else if (
     updatedData.modifiedCount === 0 &&
@@ -54,7 +57,16 @@ const updateUserInDB = async (id: string, updatedUserData: object) => {
 const getAllUserFromDB = async () => {
   const result = await User.aggregate([
     { $match: {} },
-    { $project: { password: 0, orders: 0 } },
+    {
+      $project: {
+        password: 0,
+        orders: 0,
+        isDeleted: 0,
+        _id: 0,
+        isActive: 0,
+        hobbies: 0,
+      },
+    },
   ]);
   return result;
 };
@@ -78,15 +90,33 @@ const getSingleUserFromDB = async (id: string) => {
   const userId = Number(id);
   const result = await User.aggregate([
     { $match: { userId: userId } },
-    { $project: { password: 0, orders: 0, _id: 0 } },
+    { $project: { password: 0, orders: 0, isDeleted: 0, _id: 0 } },
   ]);
 
   return result;
 };
 
-const deleteUserFromDB = async (userId: string) => {
-  const result = await User.updateOne({ userId }, { isDeleted: true });
-  return result;
+const deleteUserFromDB = async (id: string) => {
+  const userId = Number(id);
+  const existUser = await User.findOne({
+    userId,
+    isDeleted: false,
+  });
+  // console.log(existUser);
+
+  if (existUser) {
+    const result = await User.updateOne({ userId }, { isDeleted: true });
+
+    if (result?.acknowledged && result?.matchedCount && result?.modifiedCount) {
+      return null;
+    } else {
+      return Promise.reject('User not found');
+    }
+
+    return result;
+  } else {
+    return Promise.reject('User not found');
+  }
 };
 
 const totalPriceFromOrders = async (id: string) => {
